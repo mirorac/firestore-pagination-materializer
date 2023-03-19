@@ -37,12 +37,13 @@ export declare function readPages(queryParams: QueryConstraint[], collectionRef:
  * Materializes the pages of data from a Firestore collection to another collection.
  * Saves each page with cursor and metadata in the destination collection.
  *
- * @param {QueryConstraint[]} queryParams - Array of query constraints to filter the data.
- * @param {CollectionReference} sourceCollectionRef - Reference to the Firestore source collection.
- * @param {CollectionReference} destinationCollectionRef - Reference to the Firestore destination collection.
- * @param {number} batchSize - Maximum number of documents to read per page.
- * @param {Record<string, any>} [metadata] - Optional metadata to be saved with each page.
- * @returns {Promise<void>}
+ * @param {QueryConstraint[]} - an array of query constraints used to filter the documents
+ * @param {CollectionReference} sourceCollectionRef - the reference to the source collection to read documents from
+ * @param {CollectionReference} destinationCollectionRef - the reference to the destination collection to save documents to
+ * @param {number} batchSize - the number of documents to read in each page
+ * @param {Record<string, any>} [metadata] - optional metadata to attach to each saved page
+ *
+ * @returns {Promise<void>} a Promise that resolves when all pages have been saved to the destination collection
  */
 export declare function materializePaginationResults(queryParams: QueryConstraint[], sourceCollectionRef: CollectionReference, destinationCollectionRef: CollectionReference, batchSize: number, metadata?: Record<string, any>): Promise<void>;
 /**

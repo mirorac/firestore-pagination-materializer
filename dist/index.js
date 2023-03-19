@@ -64,22 +64,28 @@ function readPages(queryParams, collectionRef, batchSize, metadata) {
     return __asyncGenerator(this, arguments, function* readPages_1() {
         let lastCursor = null;
         let pageNumber = 1;
+        // loop until there are documents
         while (true) {
+            // construct a query with the provided query parameters and batch size, starting after the last cursor
             let currentQuery = (0, firestore_1.query)(collectionRef, ...queryParams, (0, firestore_1.limit)(batchSize));
             if (lastCursor) {
                 currentQuery = (0, firestore_1.query)(currentQuery, (0, firestore_1.startAfter)(lastCursor.id));
             }
+            // execute the query and check if it returned any documents
             const querySnapshot = yield __await((0, firestore_1.getDocs)(currentQuery));
             if (querySnapshot.empty) {
-                break;
+                break; // exit the loop if there are no more documents to fetch
             }
+            // extract data and cursor from the query snapshot
             const data = [];
             let cursor = null;
             querySnapshot.forEach((doc) => {
                 data.push(doc.data());
                 cursor = doc.id;
             });
+            // update the last cursor to be the last document in the batch
             lastCursor = querySnapshot.docs[querySnapshot.docs.length - 1];
+            // add metadata and yield the current page
             const pageMetadata = metadata
                 ? Object.assign(Object.assign({}, metadata), { pageNumber: pageNumber }) : { pageNumber: pageNumber };
             yield yield __await({
@@ -87,7 +93,7 @@ function readPages(queryParams, collectionRef, batchSize, metadata) {
                 data: data,
                 metadata: pageMetadata,
             });
-            pageNumber++;
+            pageNumber++; // increment the page number for the next iteration
         }
     });
 }
@@ -96,22 +102,25 @@ exports.readPages = readPages;
  * Materializes the pages of data from a Firestore collection to another collection.
  * Saves each page with cursor and metadata in the destination collection.
  *
- * @param {QueryConstraint[]} queryParams - Array of query constraints to filter the data.
- * @param {CollectionReference} sourceCollectionRef - Reference to the Firestore source collection.
- * @param {CollectionReference} destinationCollectionRef - Reference to the Firestore destination collection.
- * @param {number} batchSize - Maximum number of documents to read per page.
- * @param {Record<string, any>} [metadata] - Optional metadata to be saved with each page.
- * @returns {Promise<void>}
+ * @param {QueryConstraint[]} - an array of query constraints used to filter the documents
+ * @param {CollectionReference} sourceCollectionRef - the reference to the source collection to read documents from
+ * @param {CollectionReference} destinationCollectionRef - the reference to the destination collection to save documents to
+ * @param {number} batchSize - the number of documents to read in each page
+ * @param {Record<string, any>} [metadata] - optional metadata to attach to each saved page
+ *
+ * @returns {Promise<void>} a Promise that resolves when all pages have been saved to the destination collection
  */
 function materializePaginationResults(queryParams, sourceCollectionRef, destinationCollectionRef, batchSize, metadata) {
     var _a, e_1, _b, _c;
     return __awaiter(this, void 0, void 0, function* () {
         try {
+            // Iterate over each page of documents
             for (var _d = true, _e = __asyncValues(readPages(queryParams, sourceCollectionRef, batchSize, metadata)), _f; _f = yield _e.next(), _a = _f.done, !_a;) {
                 _c = _f.value;
                 _d = false;
                 try {
                     const page = _c;
+                    // Save the page to the destination collection
                     yield savePageToCollection(destinationCollectionRef, page.data, page.cursor, page.metadata);
                 }
                 finally {
@@ -158,10 +167,11 @@ function readMaterializedPages(collectionRef, metadataFilter) {
                 break;
             }
             for (const doc of querySnapshot.docs) {
-                lastCursor = doc.data().cursor;
+                const docData = doc.data();
+                lastCursor = docData.cursor;
                 yield yield __await({
-                    data: doc.data().data,
-                    metadata: doc.data().metadata,
+                    data: docData.data,
+                    metadata: docData.metadata,
                 });
             }
         }
