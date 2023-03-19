@@ -20,6 +20,8 @@ pnpm install mirorac/firestore-pagination-materializer
 
 ## Usage
 
+### Creating and reading pages
+
 ```typescript
 import { getFirestore } from 'firebase/firestore'
 import { collection } from 'firebase/firestore'
@@ -61,6 +63,47 @@ for await (const page of readMaterializedPages(
   console.log('Page data:', page.data)
   console.log('Page metadata:', page.metadata)
 }
+```
+
+### Minimal Vue 3 pagination
+
+```vue
+<template>
+  <ul>
+    <li v-for="article in articles" :key="article.id">
+      {{ article.title }}
+    </li>
+  </ul>
+  <button @click="loadMore">Load more</button>
+</template>
+<script setup lang="ts">
+import { db as firestore } from '~/plugins/firebase/db'
+import { collection } from 'firebase/firestore'
+import { readMaterializedPages } from '~/plugins/firestore-pagination-materialized'
+import { ref } from 'vue'
+
+// Define the source and destination collections
+const destinationCollection = collection(firestore, 'paginated_responses')
+
+// Identify the query
+const metadata = {
+  id: 'newest-articles',
+}
+
+const articles = ref<any>([])
+const loader = readMaterializedPages(destinationCollection, metadata)
+async function loadMore() {
+  const page = (await loader.next()).value
+  if (page) {
+    console.log('Page data:', page.data)
+    console.log('Page metadata:', page.metadata)
+    articles.value.push(...page.data)
+  }
+}
+
+// load the first page
+loadMore()
+</script>
 ```
 
 ## List of available functions
