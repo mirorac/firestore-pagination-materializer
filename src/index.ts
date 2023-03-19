@@ -69,17 +69,21 @@ export async function* readPages(
   let lastCursor: DocumentSnapshot | null = null
   let pageNumber = 1
 
+  // loop until there are documents
   while (true) {
+    // construct a query with the provided query parameters and batch size, starting after the last cursor
     let currentQuery = query(collectionRef, ...queryParams, limit(batchSize))
     if (lastCursor) {
       currentQuery = query(currentQuery, startAfter(lastCursor.id))
     }
 
+    // execute the query and check if it returned any documents
     const querySnapshot = await getDocs(currentQuery)
     if (querySnapshot.empty) {
-      break
+      break // exit the loop if there are no more documents to fetch
     }
 
+    // extract data and cursor from the query snapshot
     const data: DocumentData[] = []
     let cursor: string | null = null
     querySnapshot.forEach((doc: QueryDocumentSnapshot) => {
@@ -87,8 +91,10 @@ export async function* readPages(
       cursor = doc.id
     })
 
+    // update the last cursor to be the last document in the batch
     lastCursor = querySnapshot.docs[querySnapshot.docs.length - 1]
 
+    // add metadata and yield the current page
     const pageMetadata = metadata
       ? { ...metadata, pageNumber: pageNumber }
       : { pageNumber: pageNumber }
@@ -98,7 +104,7 @@ export async function* readPages(
       metadata: pageMetadata,
     }
 
-    pageNumber++
+    pageNumber++ // increment the page number for the next iteration
   }
 }
 
@@ -106,12 +112,13 @@ export async function* readPages(
  * Materializes the pages of data from a Firestore collection to another collection.
  * Saves each page with cursor and metadata in the destination collection.
  *
- * @param {QueryConstraint[]} queryParams - Array of query constraints to filter the data.
- * @param {CollectionReference} sourceCollectionRef - Reference to the Firestore source collection.
- * @param {CollectionReference} destinationCollectionRef - Reference to the Firestore destination collection.
- * @param {number} batchSize - Maximum number of documents to read per page.
- * @param {Record<string, any>} [metadata] - Optional metadata to be saved with each page.
- * @returns {Promise<void>}
+ * @param {QueryConstraint[]} - an array of query constraints used to filter the documents
+ * @param {CollectionReference} sourceCollectionRef - the reference to the source collection to read documents from
+ * @param {CollectionReference} destinationCollectionRef - the reference to the destination collection to save documents to
+ * @param {number} batchSize - the number of documents to read in each page
+ * @param {Record<string, any>} [metadata] - optional metadata to attach to each saved page
+ *
+ * @returns {Promise<void>} a Promise that resolves when all pages have been saved to the destination collection
  */
 export async function materializePaginationResults(
   queryParams: QueryConstraint[],
@@ -120,12 +127,14 @@ export async function materializePaginationResults(
   batchSize: number,
   metadata?: Record<string, any>
 ): Promise<void> {
+  // Iterate over each page of documents
   for await (const page of readPages(
     queryParams,
     sourceCollectionRef,
     batchSize,
     metadata
   )) {
+    // Save the page to the destination collection
     await savePageToCollection(
       destinationCollectionRef,
       page.data,
