@@ -190,10 +190,11 @@ export async function* readMaterializedPages(
     }
 
     for (const doc of querySnapshot.docs) {
-      lastCursor = doc.data().cursor
+      const docData = doc.data()
+      lastCursor = docData.cursor
       yield {
-        data: doc.data().data,
-        metadata: doc.data().metadata,
+        data: docData.data,
+        metadata: docData.metadata,
       }
     }
   }
