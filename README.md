@@ -1,14 +1,16 @@
 # Firestore Pagination Materializer
 
-This utility provides a set of functions to materialize pagination results from a Firestore collection.
+This utility allows you to read the data in batches, reducing the number of Firestore reads required.
 
-> EVERYTHING IN THIS REPOSITORY HAS BEEN CREATED BY GPT-4, including code, documentation and this README.md
+> EVERYTHING IN THIS REPOSITORY HAS BEEN CREATED BY GPT-4, including the code, documentation, repository name and this README.md file
 
-Materializing pagination results can be useful in a number of scenarios, especially when dealing with large datasets in Firestore. The process involves breaking up a query into smaller batches, reading and storing each batch of data along with a cursor to allow for efficient retrieval, and then fetching the materialized pages as needed.
+Firestore's billing model is based on the number of read, write, and delete operations performed on the database.
 
-This utility helps optimize costs of Firestore usage by reducing the number of reads required to retrieve a large dataset. Without materializing the pagination results, each time the query is executed, Firestore would need to read the entire dataset to determine the appropriate page to return, which could be very costly in terms of Firestore reads.
+When implementing a pagination system in Firestore, it's important to consider the number of read operations that will be required to retrieve the data. Retrieving a large dataset could result in many read operations and consequently increase costs. By implementing materialized pagination, we can reduce the number of read operations required to fetch data and optimize the costs.
 
-By storing the pagination results in a separate collection, the utility allows you to read the data in batches, reducing the number of Firestore reads required. In addition, the metadata provided by this utility can be used to filter the materialized pages, allowing you to retrieve only the data that is relevant to your use case. This can further reduce the number of reads required, optimizing Firestore usage and potentially reducing costs.
+Let's take the example of a blog website that displays a list of the newest blog articles, 20 articles per page. Without materialized pagination, fetching documents to display a single page would result in 20 read operations. On high traffic websites, this would be an inefficient use of Firestore and could result in high costs.
+
+With materialized pagination, we can fetch the newest blog articles in small batches or pages, ie. 20 articles with a single read operation. While Firestore provides [data bundles](https://firebase.google.com/docs/firestore/bundles) for this use case, it has it's limitations. For example, it is not viable for use cases where you expect that each of your users will be making different queries or want different pieces of information. Pagination materializer can use the metadata parameter to pass additional information, such as the page number or a unique identifier of a query, so you can build batches for each user or a clsuter of users separately.
 
 ## Installation
 
@@ -31,7 +33,7 @@ const firestore = getFirestore()
 
 // Define the source and destination collections
 const sourceCollection = collection(firestore, 'articles')
-const destinationCollection = collection(firestore, '_pages')
+const destinationCollection = collection(firestore, 'article_listing_pages')
 
 // Define the query constraints and batch size
 const queryParams = [
@@ -41,7 +43,7 @@ const queryParams = [
 const metadata = {
   id: 'newest-articles',
 }
-const batchSize = 10
+const batchSize = 20
 
 // Materialize the pagination results
 await materializePaginationResults(
