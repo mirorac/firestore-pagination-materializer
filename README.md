@@ -10,7 +10,7 @@ When implementing a pagination system in Firestore, it's important to consider t
 
 Let's take the example of a blog website that displays a list of the newest blog articles, 20 articles per page. Without materialized pagination, fetching documents to display a single page would result in 20 read operations. On high traffic websites, this would be an inefficient use of Firestore and could result in high costs.
 
-With materialized pagination, we can fetch the newest blog articles in small batches or pages, ie. 20 articles with a single read operation. While Firestore provides [data bundles](https://firebase.google.com/docs/firestore/bundles) for this use case, it has it's limitations. For example, it is not viable for use cases where you expect that each of your users will be making different queries or want different pieces of information. Pagination materializer can use the metadata parameter to pass additional information, such as the page number or a unique identifier of a query, so you can build batches for each user or a clsuter of users separately.
+With materialized pagination, we can fetch the newest blog articles in small batches or pages, ie. 20 articles with a single read operation. While Firestore provides [data bundles](https://firebase.google.com/docs/firestore/bundles) for this use case, it has it's limitations. For example, it is not viable for use cases where you expect that each of your users will be making different queries or want different pieces of information. Pagination materializer can use the metadata parameter to pass additional information, such as a unique identifier of a query, so you can build batches for each user or a cluster of users separately.
 
 ## Installation
 
@@ -83,7 +83,7 @@ import { readMaterializedPages } from '~/plugins/firestore-pagination-materializ
 import { ref } from 'vue'
 
 // Define the source and destination collections
-const destinationCollection = collection(firestore, 'paginated_responses')
+const destinationCollection = collection(firestore, 'article_listing_pages')
 
 // Identify the query
 const metadata = {
